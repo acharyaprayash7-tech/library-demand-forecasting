@@ -1,0 +1,4 @@
+SYNTHETIC DATASET NOTICE
+-------------------------
+This dataset (library_demand_data.csv) is artificially generated for academic demonstration purposes. It is NOT real library data.
+It was created using src/generate_synthetic_dataset.py with a fixed random seed (42) for reproducibility.
