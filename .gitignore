@@ -1,0 +1,34 @@
+﻿# Virtual environment
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment / secrets
+.env
+*.env
+*.key
+*credentials*
+
+# Model artifacts (optional - see note below)
+# models/*.pkl
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Data (optional - uncomment if dataset is large or private)
+# data/raw/*.csv
+# data/processed/*.csv
