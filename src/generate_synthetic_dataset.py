@@ -1,46 +1,40 @@
 """
 Synthetic Library Book Demand Dataset Generator
 -------------------------------------------------
-This script generates a SYNTHETIC dataset simulating monthly book
-borrowing activity in a college library. It is used because real
-library data was not available for this academic project.
+Generates a SYNTHETIC dataset simulating monthly book borrowing
+activity in a college library (real library data was unavailable).
 
 Each row = one book's aggregated activity for one month.
-
-Run this script once to create:
-    data/raw/library_demand_data.csv
+Run once to create: data/raw/library_demand_data.csv
 """
 
 import pandas as pd
 import numpy as np
 
 # ----------------------------------------------------------------
-# 1. SETTINGS (change these if you want a bigger/smaller dataset)
+# 1. SETTINGS
 # ----------------------------------------------------------------
 RANDOM_SEED = 42
-NUM_MONTHS = 30                     # ~2.5 years of history
+NUM_MONTHS = 30
 BOOKS_PER_CATEGORY = 12
 START_DATE = "2022-01-01"
 
 np.random.seed(RANDOM_SEED)
 
 # ----------------------------------------------------------------
-# 2. CATEGORY -> DEPARTMENT MAPPING
-#    Each category also gets an "exam_boost" - how much extra
-#    demand it gets during exam months (technical subjects spike
-#    harder than general/literature subjects).
+# 2. CATEGORY -> DEPARTMENT MAPPING (with exam-time demand boost)
 # ----------------------------------------------------------------
 CATEGORIES = {
-    "Computer Science":   {"department": "CSE",     "exam_boost": 1.8},
-    "Data Science":       {"department": "CSE",     "exam_boost": 1.9},
-    "Electronics":        {"department": "ECE",     "exam_boost": 1.6},
-    "Mechanical":         {"department": "MECH",    "exam_boost": 1.5},
-    "Civil":              {"department": "CIVIL",   "exam_boost": 1.4},
-    "Mathematics":        {"department": "SCIENCE", "exam_boost": 1.7},
-    "Physics":            {"department": "SCIENCE", "exam_boost": 1.5},
-    "Chemistry":          {"department": "SCIENCE", "exam_boost": 1.4},
-    "Business Management":{"department": "MBA",     "exam_boost": 1.3},
-    "English Literature": {"department": "HUMANITIES","exam_boost": 1.1},
+    "Computer Science":    {"department": "CSE",      "exam_boost": 1.8},
+    "Data Science":        {"department": "CSE",      "exam_boost": 1.9},
+    "Electronics":         {"department": "ECE",      "exam_boost": 1.6},
+    "Mechanical":          {"department": "MECH",     "exam_boost": 1.5},
+    "Civil":               {"department": "CIVIL",    "exam_boost": 1.4},
+    "Mathematics":         {"department": "SCIENCE",  "exam_boost": 1.7},
+    "Physics":             {"department": "SCIENCE",  "exam_boost": 1.5},
+    "Chemistry":           {"department": "SCIENCE",  "exam_boost": 1.4},
+    "Business Management": {"department": "MBA",      "exam_boost": 1.3},
+    "English Literature":  {"department": "HUMANITIES","exam_boost": 1.1},
 }
 
 AUTHOR_FIRST = ["A.", "R.", "S.", "K.", "M.", "P.", "N.", "V.", "J.", "D."]
@@ -58,10 +52,6 @@ TITLE_TEMPLATES = [
 
 # ----------------------------------------------------------------
 # 3. BUILD BOOK MASTER LIST
-#    Each book gets:
-#      - base_popularity : how much it's borrowed on average
-#      - trend_type       : rising / falling / stable over time
-#      - trend_slope      : how strong that trend is
 # ----------------------------------------------------------------
 books = []
 book_counter = 1
@@ -72,10 +62,8 @@ for category, info in CATEGORIES.items():
         title = TITLE_TEMPLATES[i % len(TITLE_TEMPLATES)].format(cat=category)
         author = f"{np.random.choice(AUTHOR_FIRST)} {np.random.choice(AUTHOR_LAST)}"
 
-        base_popularity = np.random.gamma(shape=3.0, scale=6.0)  # skewed: most books modest, a few very popular
-        trend_type = np.random.choice(
-            ["rising", "falling", "stable"], p=[0.3, 0.2, 0.5]
-        )
+        base_popularity = np.random.gamma(shape=3.0, scale=6.0)
+        trend_type = np.random.choice(["rising", "falling", "stable"], p=[0.3, 0.2, 0.5])
         trend_slope = {
             "rising":  np.random.uniform(0.4, 1.2),
             "falling": -np.random.uniform(0.3, 0.9),
@@ -99,32 +87,25 @@ for category, info in CATEGORIES.items():
 books_df = pd.DataFrame(books)
 
 # ----------------------------------------------------------------
-# 4. BUILD THE MONTHLY TIMELINE
+# 4. TIMELINE + CALENDAR HELPERS
 # ----------------------------------------------------------------
-months = pd.date_range(start=START_DATE, periods=NUM_MONTHS, freq="MS")  # month start
-
+months = pd.date_range(start=START_DATE, periods=NUM_MONTHS, freq="MS")
 
 def get_semester(month_num: int) -> str:
-    """Jan-Jun = Even semester, Jul-Dec = Odd semester (simplified)."""
     return "Even" if month_num <= 6 else "Odd"
 
-
 def is_exam_period(month_num: int) -> int:
-    """Exam months: April, May, October, November (typical semester ends)."""
     return 1 if month_num in [4, 5, 10, 11] else 0
 
-
 def is_holiday(month_num: int) -> int:
-    """Holiday/break months: June, December."""
     return 1 if month_num in [6, 12] else 0
-
 
 # ----------------------------------------------------------------
 # 5. GENERATE MONTHLY DEMAND RECORDS
 # ----------------------------------------------------------------
 records = []
 record_id = 1
-prev_borrowed = {}  # book_id -> last month's borrowed_count (for returns lag)
+prev_borrowed = {}
 
 for month_index, date in enumerate(months):
     month_num = date.month
@@ -133,38 +114,23 @@ for month_index, date in enumerate(months):
     holiday_flag = is_holiday(month_num)
 
     for _, book in books_df.iterrows():
-        # --- Trend component: popularity drifts up/down over time ---
-        trend_effect = 1 + (book["trend_slope"] * month_index / NUM_MONTHS)
-        trend_effect = max(trend_effect, 0.1)  # never let it go negative/zero
+        trend_effect = max(1 + (book["trend_slope"] * month_index / NUM_MONTHS), 0.1)
 
-        # --- Seasonal component ---
         seasonal_multiplier = 1.0
         if exam_flag:
             seasonal_multiplier *= book["exam_boost"]
         if holiday_flag:
-            seasonal_multiplier *= 0.4  # much lower activity during breaks
+            seasonal_multiplier *= 0.4
 
-        # --- Expected demand before noise ---
-        expected_demand = book["base_popularity"] * trend_effect * seasonal_multiplier
-        expected_demand = max(expected_demand, 0.5)
-
-        # --- Add realistic noise (Poisson matches "count" data well) ---
+        expected_demand = max(book["base_popularity"] * trend_effect * seasonal_multiplier, 0.5)
         borrowed_count = int(np.random.poisson(lam=expected_demand))
 
-        # --- Returned count: based on LAST month's borrows (a real lag) ---
         last_month_borrowed = prev_borrowed.get(book["book_id"], borrowed_count)
-        returned_count = int(
-            np.random.binomial(n=max(last_month_borrowed, 0), p=0.85)
-        )
-
-        # --- Renewals: a fraction of this month's borrows ---
+        returned_count = int(np.random.binomial(n=max(last_month_borrowed, 0), p=0.85))
         renewal_count = int(np.random.binomial(n=borrowed_count, p=0.15))
 
-        # --- Reservations: rise when demand exceeds available stock ---
         unmet_demand = max(0, borrowed_count - book["available_copies"])
-        reservation_count = int(
-            np.random.poisson(lam=unmet_demand * 0.5 + 0.3)
-        )
+        reservation_count = int(np.random.poisson(lam=unmet_demand * 0.5 + 0.3))
 
         records.append({
             "record_id": record_id,
@@ -191,7 +157,7 @@ for month_index, date in enumerate(months):
 df = pd.DataFrame(records)
 
 # ----------------------------------------------------------------
-# 6. VALIDATION CHECKS
+# 6. VALIDATION
 # ----------------------------------------------------------------
 print("=" * 60)
 print("DATASET GENERATION SUMMARY")
@@ -205,25 +171,23 @@ print("-" * 60)
 print("Borrowed count stats:")
 print(df["borrowed_count"].describe())
 print("-" * 60)
-print("Sample rows:")
 print(df.head(5).to_string(index=False))
 
 # ----------------------------------------------------------------
-# 7. SAVE TO CSV
+# 7. SAVE
 # ----------------------------------------------------------------
-output_path = "data/raw/library_demand_data.csv"
-df.to_csv(output_path, index=False)
+import os
+os.makedirs("data/raw", exist_ok=True)
+df.to_csv("data/raw/library_demand_data.csv", index=False)
 print("-" * 60)
-print(f"Saved dataset to: {output_path}")
+print("Saved dataset to: data/raw/library_demand_data.csv")
 
-# Also save a synthetic-data notice alongside it
 notice = (
-    "SYNTHETIC DATASET NOTICE\n"
-    "-------------------------\n"
-    "This dataset (library_demand_data.csv) is artificially generated "
-    "for academic demonstration purposes. It is NOT real library data.\n"
-    "It was created using src/generate_synthetic_dataset.py with a fixed "
-    "random seed (42) for reproducibility.\n"
+    "SYNTHETIC DATASET NOTICE\n-------------------------\n"
+    "This dataset (library_demand_data.csv) is artificially generated for "
+    "academic demonstration purposes. It is NOT real library data.\n"
+    "Created using src/generate_synthetic_dataset.py with a fixed random "
+    "seed (42) for reproducibility.\n"
 )
 with open("data/raw/SYNTHETIC_DATA_NOTICE.txt", "w") as f:
     f.write(notice)
