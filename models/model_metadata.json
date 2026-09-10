@@ -1,0 +1,85 @@
+{
+  "selected_model": "random_forest",
+  "feature_columns": [
+    "lag_1_borrowed",
+    "lag_2_borrowed",
+    "rolling_3_avg_borrowed",
+    "month_index",
+    "exam_period",
+    "holiday_indicator",
+    "semester_encoded",
+    "available_copies",
+    "reservation_count",
+    "renewal_count",
+    "publication_year",
+    "cat_Business Management",
+    "cat_Chemistry",
+    "cat_Civil",
+    "cat_Computer Science",
+    "cat_Data Science",
+    "cat_Electronics",
+    "cat_English Literature",
+    "cat_Mathematics",
+    "cat_Mechanical",
+    "cat_Physics"
+  ],
+  "split_date": "2024-01-01",
+  "evaluation": {
+    "linear_regression": {
+      "train": {
+        "MAE": 7.9387,
+        "RMSE": 10.7361,
+        "R2": 0.5226
+      },
+      "test": {
+        "MAE": 8.4094,
+        "RMSE": 11.3448,
+        "R2": 0.5762
+      },
+      "train_test_rmse_gap": -0.6087
+    },
+    "random_forest": {
+      "train": {
+        "MAE": 4.3732,
+        "RMSE": 6.1118,
+        "R2": 0.8453
+      },
+      "test": {
+        "MAE": 6.1634,
+        "RMSE": 9.4191,
+        "R2": 0.7079
+      },
+      "train_test_rmse_gap": -3.3073
+    },
+    "xgboost": {
+      "train": {
+        "MAE": 3.2858,
+        "RMSE": 4.3427,
+        "R2": 0.9219
+      },
+      "test": {
+        "MAE": 6.9963,
+        "RMSE": 9.9935,
+        "R2": 0.6712
+      },
+      "train_test_rmse_gap": -5.6508
+    }
+  },
+  "residuals": {
+    "linear_regression": {
+      "mean_residual": 0.5068,
+      "std_residual": 11.3335,
+      "max_abs_residual": 57.6505
+    },
+    "random_forest": {
+      "mean_residual": 2.0074,
+      "std_residual": 9.2027,
+      "max_abs_residual": 68.7987
+    },
+    "xgboost": {
+      "mean_residual": 3.0377,
+      "std_residual": 9.5206,
+      "max_abs_residual": 56.737
+    }
+  }
+}

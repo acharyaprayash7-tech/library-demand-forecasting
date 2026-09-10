@@ -1,0 +1,47 @@
+{
+  "split_date": "2024-01-01",
+  "train_rows": 2640,
+  "test_rows": 600,
+  "feature_count": 21,
+  "feature_columns": [
+    "lag_1_borrowed",
+    "lag_2_borrowed",
+    "rolling_3_avg_borrowed",
+    "month_index",
+    "exam_period",
+    "holiday_indicator",
+    "semester_encoded",
+    "available_copies",
+    "reservation_count",
+    "renewal_count",
+    "publication_year",
+    "cat_Business Management",
+    "cat_Chemistry",
+    "cat_Civil",
+    "cat_Computer Science",
+    "cat_Data Science",
+    "cat_Electronics",
+    "cat_English Literature",
+    "cat_Mathematics",
+    "cat_Mechanical",
+    "cat_Physics"
+  ],
+  "models": {
+    "linear_regression": {
+      "MAE": 8.4094,
+      "RMSE": 11.3448,
+      "R2": 0.5762
+    },
+    "random_forest": {
+      "MAE": 6.1634,
+      "RMSE": 9.4191,
+      "R2": 0.7079
+    },
+    "xgboost": {
+      "MAE": 6.9963,
+      "RMSE": 9.9935,
+      "R2": 0.6712
+    }
+  },
+  "best_model_by_rmse": "random_forest"
+}
