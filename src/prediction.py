@@ -142,3 +142,4 @@ if __name__ == "__main__":
         predict_demand("NOT_A_REAL_BOOK")
     except ValueError as e:
         print(f"   Correctly raised ValueError: {e}")
+    print("\nPrediction pipeline test completed successfully.")
